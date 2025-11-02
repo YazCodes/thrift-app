@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
@@ -18,11 +19,18 @@ type Store = {
   opening_hours?: string;
 };
 
+const cities = {
+  tokyo: { latitude: 35.6762, longitude: 139.6503 },
+  taipei: { latitude: 25.0330, longitude: 121.5654 },
+  hochiminh: { latitude: 10.7626, longitude: 106.6602 },
+};
+
 export default function MapScreen() {
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [selectedCity, setSelectedCity] = useState<'tokyo' | 'taipei' | 'hochiminh'>('tokyo');
 
   // Fetch stores from Supabase
   useEffect(() => {
@@ -69,17 +77,29 @@ export default function MapScreen() {
     );
   }
 
+  const region = {
+    ...cities[selectedCity],
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
+  };
+
   return (
     <View style={styles.container}>
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: 35.6762,
-          longitude: 139.6503,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
+      {/* 🌸 City Dropdown */}
+      <View style={styles.dropdownContainer}>
+        <Text style={styles.dropdownLabel}>Choose City:</Text>
+        <Picker
+          selectedValue={selectedCity}
+          onValueChange={(itemValue) => setSelectedCity(itemValue)}
+          style={styles.dropdown}
+        >
+          <Picker.Item label="Tokyo, Japan" value="tokyo" />
+          <Picker.Item label="Taipei, Taiwan" value="taipei" />
+          <Picker.Item label="Ho Chi Minh, Vietnam" value="hochiminh" />
+        </Picker>
+      </View>
+
+      <MapView style={styles.map} region={region}>
         {stores.map(store => (
           <Marker
             key={store.id}
@@ -90,7 +110,7 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* Modal popup */}
+      {/* 🩷 Modal popup */}
       <Modal
         visible={!!selectedStore}
         transparent
@@ -107,7 +127,6 @@ export default function MapScreen() {
                 {selectedStore.price_category && <Text style={styles.price}>💴 {selectedStore.price_category}</Text>}
                 <Text style={styles.address}>📍 {selectedStore.address}</Text>
 
-                {/* Favorite button */}
                 <TouchableOpacity
                   onPress={() => toggleFavorite(selectedStore.id)}
                   style={styles.favoriteButton}
@@ -132,6 +151,19 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  dropdownContainer: {
+    position: 'absolute',
+    top: 50,
+    left: 10,
+    right: 10,
+    zIndex: 10,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 8,
+    elevation: 5,
+  },
+  dropdownLabel: { fontWeight: 'bold', marginBottom: 5, color: '#222' },
+  dropdown: { width: '100%' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalBox: { width: '85%', backgroundColor: 'white', borderRadius: 16, padding: 20 },
