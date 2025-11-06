@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 
 type Store = {
   id: number;
@@ -20,9 +23,9 @@ type Store = {
 };
 
 const cities = {
-  tokyo: { latitude: 35.6762, longitude: 139.6503 },
-  taipei: { latitude: 25.0330, longitude: 121.5654 },
-  hochiminh: { latitude: 10.7626, longitude: 106.6602 },
+  tokyo: { latitude: 35.6762, longitude: 139.6503, label: 'Tokyo, Japan' },
+  taipei: { latitude: 25.0330, longitude: 121.5654, label: 'Taipei, Taiwan' },
+  hochiminh: { latitude: 10.7626, longitude: 106.6602, label: 'Ho Chi Minh, Vietnam' },
 };
 
 export default function MapScreen() {
@@ -31,8 +34,16 @@ export default function MapScreen() {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [selectedCity, setSelectedCity] = useState<'tokyo' | 'taipei' | 'hochiminh'>('tokyo');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Fetch stores from Supabase
+  const [fontsLoaded] = useFonts({
+    PixelFont: require('../../assets/fonts/PressStart2P-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync();
+  }, [fontsLoaded]);
+
   useEffect(() => {
     const fetchStores = async () => {
       setLoading(true);
@@ -44,7 +55,6 @@ export default function MapScreen() {
     fetchStores();
   }, []);
 
-  // Load favorites from AsyncStorage
   useEffect(() => {
     const loadFavorites = async () => {
       const storedFavs = await AsyncStorage.getItem('@favorites');
@@ -53,23 +63,18 @@ export default function MapScreen() {
     loadFavorites();
   }, []);
 
-  // Save favorites to AsyncStorage
   const saveFavorites = async (newFavs: number[]) => {
     setFavorites(newFavs);
     await AsyncStorage.setItem('@favorites', JSON.stringify(newFavs));
   };
 
-  // Toggle favorite
   const toggleFavorite = (storeId: number) => {
     const isFavorited = favorites.includes(storeId);
-    if (isFavorited) {
-      saveFavorites(favorites.filter(id => id !== storeId));
-    } else {
-      saveFavorites([...favorites, storeId]);
-    }
+    if (isFavorited) saveFavorites(favorites.filter(id => id !== storeId));
+    else saveFavorites([...favorites, storeId]);
   };
 
-  if (loading) {
+  if (!fontsLoaded || loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#ff69b4" />
@@ -85,20 +90,44 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 🌸 City Dropdown */}
-      <View style={styles.dropdownContainer}>
-        <Text style={styles.dropdownLabel}>Choose City:</Text>
-        <Picker
-          selectedValue={selectedCity}
-          onValueChange={(itemValue) => setSelectedCity(itemValue)}
-          style={styles.dropdown}
+      {/* 🎮 Pixel-style dropdown */}
+      <View style={styles.dropdownWrapper}>
+        <Text style={styles.dropdownLabel}>♡ CHOOSE YOUR CITY BABE :</Text>
+
+        <TouchableOpacity
+          onPress={() => setDropdownOpen(!dropdownOpen)}
+          style={styles.dropdownBox}
+          activeOpacity={0.7}
         >
-          <Picker.Item label="Tokyo, Japan" value="tokyo" />
-          <Picker.Item label="Taipei, Taiwan" value="taipei" />
-          <Picker.Item label="Ho Chi Minh, Vietnam" value="hochiminh" />
-        </Picker>
+          <Text style={styles.dropdownText}>{cities[selectedCity].label} ▼</Text>
+        </TouchableOpacity>
+
+        {dropdownOpen && (
+          <View style={styles.dropdownList}>
+            {Object.entries(cities).map(([key, city]) => (
+              <TouchableOpacity
+                key={key}
+                onPress={() => {
+                  setSelectedCity(key as any);
+                  setDropdownOpen(false);
+                }}
+                style={styles.dropdownItem}
+              >
+                <Text
+                  style={[
+                    styles.dropdownText,
+                    selectedCity === key && { fontWeight: 'bold' },
+                  ]}
+                >
+                  {city.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
+      {/* 🗾 Map */}
       <MapView style={styles.map} region={region}>
         {stores.map(store => (
           <Marker
@@ -110,13 +139,8 @@ export default function MapScreen() {
         ))}
       </MapView>
 
-      {/* 🩷 Modal popup */}
-      <Modal
-        visible={!!selectedStore}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedStore(null)}
-      >
+      {/* 💖 Modal popup */}
+      <Modal visible={!!selectedStore} transparent animationType="slide" onRequestClose={() => setSelectedStore(null)}>
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
             {selectedStore && (
@@ -127,10 +151,7 @@ export default function MapScreen() {
                 {selectedStore.price_category && <Text style={styles.price}>💴 {selectedStore.price_category}</Text>}
                 <Text style={styles.address}>📍 {selectedStore.address}</Text>
 
-                <TouchableOpacity
-                  onPress={() => toggleFavorite(selectedStore.id)}
-                  style={styles.favoriteButton}
-                >
+                <TouchableOpacity onPress={() => toggleFavorite(selectedStore.id)} style={styles.favoriteButton}>
                   <Text style={{ fontSize: 20 }}>
                     {favorites.includes(selectedStore.id) ? '💔 Remove' : '❤️ Save'}
                   </Text>
@@ -151,19 +172,56 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  dropdownContainer: {
+
+  // 🌆 Pixel dropdown styling
+  dropdownWrapper: {
     position: 'absolute',
     top: 50,
-    left: 10,
-    right: 10,
+    alignSelf: 'center',
+    backgroundColor: '#b68bff',
+    borderColor: '#703fc8',
+    borderWidth: 4,
+    shadowColor: '#3a147a',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    padding: 10,
+    width: 280,
     zIndex: 10,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 8,
-    elevation: 5,
   },
-  dropdownLabel: { fontWeight: 'bold', marginBottom: 5, color: '#222' },
-  dropdown: { width: '100%' },
+  dropdownLabel: {
+    color: '#fff',
+    fontSize: 10,
+    fontFamily: 'PixelFont',
+    marginBottom: 8,
+    textShadowColor: '#703fc8',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 0,
+  },
+  dropdownBox: {
+    backgroundColor: '#f3d6ff',
+    borderColor: '#703fc8',
+    borderWidth: 4,
+    padding: 10,
+    justifyContent: 'center',
+  },
+  dropdownText: {
+    fontFamily: 'PixelFont',
+    color: '#000',
+    fontSize: 10,
+  },
+  dropdownList: {
+    backgroundColor: '#d5b6ff',
+    borderColor: '#703fc8',
+    borderWidth: 4,
+    marginTop: 4,
+  },
+  dropdownItem: {
+    padding: 8,
+    borderBottomWidth: 2,
+    borderBottomColor: '#703fc8',
+  },
+
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   modalBox: { width: '85%', backgroundColor: 'white', borderRadius: 16, padding: 20 },
@@ -176,7 +234,6 @@ const styles = StyleSheet.create({
   closeButton: { marginTop: 20, backgroundColor: '#ff69b4', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   closeText: { color: 'white', fontWeight: 'bold' },
 });
-
 
 
 // learning notes 
