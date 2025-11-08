@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
+import { useIsFocused } from '@react-navigation/native';
 
 type Store = {
   id: number;
@@ -15,30 +16,34 @@ type Store = {
   tags?: string[];
   address: string;
   opening_hours?: string;
+  image_url?: string;
+  tiktok_url?: string[];
 };
 
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const isFocused = useIsFocused();
 
-  // Load favorite store IDs from AsyncStorage
-  useEffect(() => {
-    const loadFavorites = async () => {
-      const storedFavs = await AsyncStorage.getItem('@favorites');
-      if (storedFavs) setFavorites(JSON.parse(storedFavs));
-    };
-    loadFavorites();
-  }, []);
+  // Load favorites from AsyncStorage
+  const loadFavorites = async () => {
+    const storedFavs = await AsyncStorage.getItem('@favorites');
+    if (storedFavs) setFavorites(JSON.parse(storedFavs));
+  };
 
-  // Fetch all stores from Supabase
+  // Fetch stores from Supabase
+  const fetchStores = async () => {
+    const { data, error } = await supabase.from('stores').select('*');
+    if (error) console.error(error);
+    else setStores(data || []);
+  };
+
   useEffect(() => {
-    const fetchStores = async () => {
-      const { data, error } = await supabase.from('stores').select('*');
-      if (error) console.error(error);
-      else setStores(data || []);
-    };
-    fetchStores();
-  }, []);
+    if (isFocused) {
+      loadFavorites();
+      fetchStores();
+    }
+  }, [isFocused]);
 
   // Filter only favorite stores
   const favoriteStores = stores.filter(store => favorites.includes(store.id));
@@ -70,10 +75,18 @@ export default function FavoritesScreen() {
           {item.price_category && <Text style={styles.price}>💴 {item.price_category}</Text>}
           <Text style={styles.address}>📍 {item.address}</Text>
 
+          {item.image_url && <Image source={{ uri: item.image_url }} style={styles.image} />}
+          {item.tiktok_url && (
           <TouchableOpacity
-            onPress={() => removeFavorite(item.id)}
-            style={styles.removeButton}
+            onPress={() => item.tiktok_url?.[0] && Linking.openURL(item.tiktok_url[0])}
+            style={styles.tiktokButton}
           >
+            <Text style={styles.tiktokText}>🎀 Watch on TikTok 🎀</Text>
+          </TouchableOpacity>
+
+          )}
+
+          <TouchableOpacity onPress={() => removeFavorite(item.id)} style={styles.removeButton}>
             <Text style={styles.removeText}>💔 Remove</Text>
           </TouchableOpacity>
         </View>
@@ -92,6 +105,9 @@ const styles = StyleSheet.create({
   opening: { marginTop: 5, fontSize: 13, color: '#444' },
   price: { marginTop: 5, fontSize: 13, color: '#444' },
   address: { marginTop: 5, fontSize: 12, color: '#666' },
+  image: { width: '100%', height: 120, borderRadius: 8, marginTop: 10 },
+  tiktokButton: { marginTop: 8, backgroundColor: '#ff66c4', paddingVertical: 6, borderRadius: 6, alignItems: 'center' },
+  tiktokText: { color: '#fff', fontWeight: 'bold' },
   removeButton: { marginTop: 10, backgroundColor: '#ffe4e1', paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   removeText: { fontWeight: 'bold', color: '#ff69b4' },
 });

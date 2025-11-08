@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
@@ -20,6 +20,8 @@ type Store = {
   tags?: string[];
   address: string;
   opening_hours?: string;
+  images?: string[];
+  tiktok_url?: string[];
 };
 
 const cities = {
@@ -150,6 +152,15 @@ export default function MapScreen() {
                 {selectedStore.opening_hours && <Text style={styles.opening}>🕒 {selectedStore.opening_hours}</Text>}
                 {selectedStore.price_category && <Text style={styles.price}>💴 {selectedStore.price_category}</Text>}
                 <Text style={styles.address}>📍 {selectedStore.address}</Text>
+
+                {selectedStore.tiktok_url && selectedStore.tiktok_url.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.favoriteButton, { backgroundColor: '#ff66c4', marginTop: 10 }]}
+                    onPress={() => Linking.openURL(selectedStore.tiktok_url![0])}
+                  >
+                    <Text style={{ color: 'white', fontSize: 16 }}>🎀 Watch on TikTok 🎀</Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity onPress={() => toggleFavorite(selectedStore.id)} style={styles.favoriteButton}>
                   <Text style={{ fontSize: 20 }}>
