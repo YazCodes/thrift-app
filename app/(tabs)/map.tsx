@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, ActivityIndicator, Linking, Image } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
@@ -155,18 +155,30 @@ export default function MapScreen() {
 
                 {selectedStore.tiktok_url && selectedStore.tiktok_url.length > 0 && (
                   <TouchableOpacity
-                    style={[styles.favoriteButton, { backgroundColor: '#ff66c4', marginTop: 10 }]}
+                    style={styles.tiktokButton}
                     onPress={() => Linking.openURL(selectedStore.tiktok_url![0])}
                   >
-                    <Text style={{ color: 'white', fontSize: 16 }}>🎀 Watch on TikTok 🎀</Text>
+                    <Text style={styles.tiktokText}> ₊˚⊹♡Watch on TikTok♡₊˚⊹♡</Text>
                   </TouchableOpacity>
                 )}
 
-                <TouchableOpacity onPress={() => toggleFavorite(selectedStore.id)} style={styles.favoriteButton}>
-                  <Text style={{ fontSize: 20 }}>
-                    {favorites.includes(selectedStore.id) ? '💔 Remove' : '❤️ Save'}
-                  </Text>
-                </TouchableOpacity>
+                {/* 🐶 Character + Save/Remove Image */}
+                <View style={styles.characterContainer}>
+                  <Image source={require('../../assets/images/hellokitty.png')} style={styles.character} />
+                  <TouchableOpacity
+                    onPress={() => toggleFavorite(selectedStore.id)}
+                    style={styles.saveButtonWrapper}
+                  >
+                    <Image
+                      source={
+                        favorites.includes(selectedStore.id)
+                          ? require('../../assets/images/removeButton.png')
+                          : require('../../assets/images/saveButton.png')
+                      }
+                        style={[{ width: 300, height: 300 }, styles.saveButton]}
+                    />
+                  </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity onPress={() => setSelectedStore(null)} style={styles.closeButton}>
                   <Text style={styles.closeText}>Close</Text>
@@ -235,16 +247,115 @@ const styles = StyleSheet.create({
 
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalBackground: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
-  modalBox: { width: '85%', backgroundColor: 'white', borderRadius: 16, padding: 20 },
-  storeName: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  description: { marginTop: 10, fontSize: 14, color: '#555' },
-  opening: { marginTop: 10, fontSize: 14, color: '#444' },
-  price: { marginTop: 5, fontSize: 14, color: '#444' },
-  address: { marginTop: 10, fontSize: 13, color: '#666' },
-  favoriteButton: { marginTop: 15, alignItems: 'center', paddingVertical: 10, backgroundColor: '#ffe4e1', borderRadius: 10 },
-  closeButton: { marginTop: 20, backgroundColor: '#ff69b4', paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  closeText: { color: 'white', fontWeight: 'bold' },
+  modalBox: { width: '85%', backgroundColor: '#b68bff', borderRadius: 16, padding: 20, borderColor: '#703fc8',borderWidth: 4, shadowColor: '#3a147a',
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,},
+  storeName: {
+    fontFamily: 'PixelFont',
+    fontSize: 16,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 4,
+    textShadowColor: '#6A2EBD',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  description: {
+    fontFamily: 'PixelFont',
+    fontSize: 12,
+    color: '#000', 
+    textAlign: 'center',
+    marginVertical: 4,
+    textShadowColor: '#d5b6ff',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  opening: {
+    fontFamily: 'PixelFont',
+    fontSize: 12,
+    color: '#000',
+    textAlign: 'center',
+    marginVertical: 2,
+    textShadowColor: '#d5b6ff',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  price: {
+    fontFamily: 'PixelFont',
+    fontSize: 12,
+    color: '#000',
+    textAlign: 'center',
+    marginVertical: 2,
+    textShadowColor: '#d5b6ff',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  address: {
+    fontFamily: 'PixelFont',
+    fontSize: 12,
+    color: '#000',
+    textAlign: 'center',
+    marginVertical: 2,
+    textShadowColor: '#d5b6ff',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  tiktokButton: {
+    marginTop: 10,
+    alignItems: 'center',
+    paddingVertical: 8,
+    backgroundColor: '#ea2db4ff',
+    borderWidth: 3,
+    borderColor: '#6A2EBD',
+    borderRadius: 6,
+  },
+  tiktokText: {
+    fontFamily: 'PixelFont',
+    fontSize: 11,
+    color: '#ffffffff',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#6A2EBD',
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  closeText: {
+    fontFamily: 'PixelFont',
+    fontSize: 8,
+    color: '#FFFFFF',
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  characterContainer: {
+    marginTop: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  character: {
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
+  },
+  saveButtonWrapper: {
+    position: 'absolute',
+    top: -100,
+    right: 50,
+  },
+  saveButton: {
+    width: 300,
+    height: 250,
+    resizeMode: 'contain',
+  },
 });
+
 
 
 // learning notes 
