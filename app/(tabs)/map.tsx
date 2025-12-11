@@ -8,6 +8,8 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 
+
+
 type Store = {
   id: number;
   name: string;
@@ -30,6 +32,7 @@ const cities = {
   hochiminh: { latitude: 10.7626, longitude: 106.6602, label: 'Ho Chi Minh, Vietnam' },
 };
 
+
 export default function MapScreen() {
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
@@ -46,16 +49,73 @@ export default function MapScreen() {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
 
+  // useEffect(() => {
+  //   const fetchStores = async () => {
+
+  //     setLoading(true);
+  //     const { data, error } = await supabase.from('stores').select('*');
+  //     if (error) console.error('Error fetching stores:', error);
+  //     else setStores(data || []);
+  //     setLoading(false);
+
+
+  //   };
+  //   fetchStores();
+  // }, []);
+
+// LOADS ALL MY STORES FROM THE DATABASE FOR DEBUGGING
+  // useEffect(() => {
+  // const fetchStores = async () => {
+  //   console.log("Fetching stores...");
+
+  //   const { data, error } = await supabase
+  //     .from("stores")
+  //     .select("*");
+
+  //   if (error) {
+  //     console.log("Supabase error:", error);
+  //     return;
+  //   }
+
+  //   console.log("Loaded stores:", data.length);
+  //   data.forEach((s) => {
+  //     console.log(
+  //       `${s.name} → lat:${s.latitude}, lng:${s.longitude}`
+  //     );
+  //   });
+
+  //   setStores(data);
+  // };
+
+  //   fetchStores();
+  // }, []);
+
+
   useEffect(() => {
-    const fetchStores = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.from('stores').select('*');
-      if (error) console.error('Error fetching stores:', error);
-      else setStores(data || []);
+  const fetchStores = async () => {
+    console.log("Fetching stores...");
+    const { data, error } = await supabase.from("stores").select("*");
+
+    if (error) {
+      console.error("Error fetching stores:", error);
       setLoading(false);
-    };
-    fetchStores();
-  }, []);
+      return;
+    }
+
+    console.log("Loaded stores:", data.length);
+
+    data.forEach((item) => {
+      console.log(`${item.name} → lat:${item.latitude}, lng:${item.longitude}`);
+    });
+
+    setStores(data);
+    setLoading(false);   
+  };
+
+  fetchStores();
+ }, []);
+
+
 
   useEffect(() => {
     const loadFavorites = async () => {
